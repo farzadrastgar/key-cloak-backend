@@ -3,12 +3,14 @@ import {
   Controller,
   Post,
   UploadedFile,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import * as uuid from 'uuid';
 import { UploadService } from './upload.service';
+import { AccessTokenGuard } from 'src/auth/guards/accessToken.guard';
 
 @Controller('upload')
 export class UploadController {
@@ -40,6 +42,8 @@ export class UploadController {
       },
     }),
   )
+
+  @UseGuards(AccessTokenGuard)
   @Post()
   async uploadFile(@UploadedFile() file: Express.Multer.File) {
     if (!file) {
