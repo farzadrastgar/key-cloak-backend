@@ -6,8 +6,6 @@ import { ConfigModule } from "@nestjs/config";
 import { ServeStaticModule } from "@nestjs/serve-static";
 import { AuthModule } from "./auth/auth.module";
 import { UsersModule } from "./users/users.module";
-import { UploadModule } from "./upload/upload.module";
-import { CharacterModule } from "./character/character.module";
 
 @Module({
   imports: [
@@ -18,8 +16,6 @@ import { CharacterModule } from "./character/character.module";
     }),
     AuthModule,
     UsersModule,
-    CharacterModule,
-    UploadModule,
   ],
   providers: [
     {
@@ -28,4 +24,4 @@ import { CharacterModule } from "./character/character.module";
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }

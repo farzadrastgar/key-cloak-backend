@@ -14,8 +14,8 @@ export class AuthService {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
-    private configService: ConfigService
-  ) {}
+    private configService: ConfigService,
+  ) { }
 
   async validateUser(email: string, password: string): Promise<any> {
     const user = await this.usersService.findOne(email);
@@ -29,7 +29,7 @@ export class AuthService {
   async register(
     email: string,
     password: string,
-    passwordRepeat: string
+    passwordRepeat: string,
   ): Promise<any> {
     const user = await this.usersService.findOne(email);
     if (user) {

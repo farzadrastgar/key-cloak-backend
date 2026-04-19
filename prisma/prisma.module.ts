@@ -1,10 +1,8 @@
-import { Module } from '@nestjs/common';
-import { UserPrismaService } from './services/userPrisma.service';
-import { CharacterPrismaService } from './services/characterPrisma.service';
-import { ImagePrismaService } from './services/imagePrisma.service';
+import { Module } from "@nestjs/common";
+import { UserPrismaService } from "./services/userPrisma.service";
 
 @Module({
-  providers: [UserPrismaService, CharacterPrismaService, ImagePrismaService],
-  exports: [UserPrismaService, CharacterPrismaService, ImagePrismaService],
+  providers: [UserPrismaService],
+  exports: [UserPrismaService],
 })
-export class PrismaModule {}
+export class PrismaModule { }

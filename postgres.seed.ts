@@ -1,52 +1,35 @@
-const fs = require('fs');
-const { Pool } = require('pg');
-require('dotenv').config(); // Load environment variables from .env file
+import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcrypt";
 
+const prisma = new PrismaClient();
 
-// Configure PostgreSQL connection using environment variables
-const pool = new Pool({
-  user: process.env.POSTGRES_USER,
-  host: process.env.POSTGRES_HOST,
-  database: process.env.POSTGRES_DATABASE,
-  password: process.env.POSTGRES_PASSWORD,
-  port: process.env.POSTGRES_PORT,
-});
+async function main() {
+  const email = "admin@example.com";
+  const plainPassword = "Admin@123456";
 
-// Path to the SQL seed file
-const sqlFilePath = "./prisma/sql/seed.sql"; 
+  const hashedPassword = await bcrypt.hash(plainPassword, 10);
 
-async function seedDatabase() {
-  try {
-    // Read the SQL file
-    const sql = fs.readFileSync(sqlFilePath, "utf8");
+  // create admin user if not exists
+  const admin = await prisma.user.upsert({
+    where: { email },
+    update: {},
+    create: {
+      email,
+      password: hashedPassword,
+      isVerified: true,
+      roles: ["admin", "user"],
+      active: true,
+    },
+  });
 
-    // Connect to the database
-    const client = await pool.connect();
-
-    try {
-      // Begin transaction
-      await client.query("BEGIN");
-
-      // Execute SQL commands from the file
-      await client.query(sql);
-
-      // Commit transaction
-      await client.query("COMMIT");
-
-      console.log("Seed data inserted successfully");
-    } catch (err) {
-      // Rollback transaction on error
-      await client.query("ROLLBACK");
-      console.error("Error seeding data:", err);
-    } finally {
-      // Release client back to the pool
-      client.release();
-      // Close the pool
-      await pool.end();
-    }
-  } catch (err) {
-    console.error("Error reading SQL file:", err);
-  }
+  console.log("Admin created:", admin.email);
 }
 
-seedDatabase();
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
