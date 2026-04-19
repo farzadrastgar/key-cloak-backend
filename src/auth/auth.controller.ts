@@ -1,8 +1,7 @@
-import { Body, Controller, Post, Req, UseGuards } from "@nestjs/common";
+import { Controller, Post, Req, UseGuards } from "@nestjs/common";
 import { Request } from "express";
 
 import { AuthService } from "./auth.service";
-import { RegisterDto } from "./dto/register.dto";
 
 import { RefreshTokenGuard } from "./guards/refreshToken.guard";
 import { AccessTokenGuard } from "./guards/accessToken.guard";
@@ -16,15 +15,6 @@ interface JwtPayload {
 @Controller("auth")
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
-
-  @Post("register")
-  register(@Body() dto: RegisterDto) {
-    return this.authService.register(
-      dto.email,
-      dto.password,
-      dto.passwordRepeat,
-    );
-  }
 
   @UseGuards(LocalAuthGuard)
   @Post("login")

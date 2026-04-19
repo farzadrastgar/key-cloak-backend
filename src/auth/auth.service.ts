@@ -1,7 +1,6 @@
 import {
   Injectable,
   UnauthorizedException,
-  BadRequestException,
   ForbiddenException,
 } from "@nestjs/common";
 import { UsersService } from "../users/users.service";
@@ -20,7 +19,7 @@ export class AuthService {
   ) {}
 
   async validateUser(email: string, password: string): Promise<User | null> {
-    const user = await this.usersService.findOne(email);
+    const user = await this.usersService.findOneByEmail(email);
     if (!user) return null;
 
     const isValid = await this.passwordService.compare(password, user.password);
@@ -28,31 +27,6 @@ export class AuthService {
     if (!isValid) return null;
 
     return user;
-  }
-
-  async register(
-    email: string,
-    password: string,
-    passwordRepeat: string,
-  ): Promise<AuthTokens> {
-    const existingUser = await this.usersService.findOne(email);
-
-    if (existingUser) {
-      throw new BadRequestException("User already exists");
-    }
-
-    if (password !== passwordRepeat) {
-      throw new BadRequestException("Passwords do not match");
-    }
-
-    const hashedPassword = await this.passwordService.hash(password);
-
-    const newUser = await this.usersService.create({
-      email,
-      password: hashedPassword,
-    });
-
-    return this.issueTokens(newUser);
   }
 
   async login(user: User): Promise<AuthTokens> {
@@ -67,7 +41,7 @@ export class AuthService {
     userId: string,
     refreshToken: string,
   ): Promise<AuthTokens> {
-    const user = await this.usersService.findById(userId);
+    const user = await this.usersService.findOneById(userId);
 
     if (!user || !user.refreshToken) {
       throw new ForbiddenException("Access Denied");
