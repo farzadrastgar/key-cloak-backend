@@ -7,6 +7,8 @@ import { PassportModule } from "@nestjs/passport";
 import { LocalStrategy } from "./strategies/local.strategy";
 import { AccessTokenStrategy } from "./strategies/accessToken.strategy";
 import { RefreshTokenStrategy } from "./strategies/refreshToken.strategy";
+import { TokenService } from "./services/token.service";
+import { PasswordService } from "./services/password.service";
 
 @Module({
   imports: [
@@ -24,7 +26,9 @@ import { RefreshTokenStrategy } from "./strategies/refreshToken.strategy";
     LocalStrategy,
     AccessTokenStrategy,
     RefreshTokenStrategy,
+    TokenService,
+    PasswordService,
   ],
   controllers: [AuthController],
 })
-export class AuthModule { }
+export class AuthModule {}

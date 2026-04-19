@@ -2,11 +2,11 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import * as _ from "lodash";
 import { UpdateUserDto } from "./dto/update-user-dto";
 import { UserPrismaService } from "prisma/services/userPrisma.service";
-import { User } from "./dto/user.dto";
+import { User } from "@prisma/client";
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: UserPrismaService) { }
+  constructor(private readonly prisma: UserPrismaService) {}
 
   async create({ email, password }) {
     const createdUser = await this.prisma.userCreate({
@@ -15,7 +15,7 @@ export class UsersService {
     return _.omit(createdUser, "password");
   }
 
-  async findOne(email: string): User {
+  async findOne(email: string): Promise<User> {
     return this.prisma.userFindUniqueEmail({ where: { email } });
   }
 

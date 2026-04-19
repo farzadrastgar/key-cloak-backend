@@ -1,38 +1,50 @@
-import { Body, Controller, Get, Post, Req, UseGuards } from "@nestjs/common";
-import { AuthService } from "./auth.service";
-import { LoginDto } from "./dto/login.dto";
-import { RegisterDto } from "./dto/register.dto";
-import { RefreshTokenGuard } from "./guards/refreshToken.guard";
+import { Body, Controller, Post, Req, UseGuards } from "@nestjs/common";
 import { Request } from "express";
+
+import { AuthService } from "./auth.service";
+import { RegisterDto } from "./dto/register.dto";
+
+import { RefreshTokenGuard } from "./guards/refreshToken.guard";
 import { AccessTokenGuard } from "./guards/accessToken.guard";
 import { LocalAuthGuard } from "./guards/local.auth.guard";
 
+interface JwtPayload {
+  sub: string;
+  refreshToken?: string;
+}
+
 @Controller("auth")
 export class AuthController {
-  constructor(private authService: AuthService) { }
+  constructor(private readonly authService: AuthService) {}
 
   @Post("register")
-  register(@Body() { email, password, passwordRepeat }: RegisterDto) {
-    return this.authService.register(email, password, passwordRepeat);
+  register(@Body() dto: RegisterDto) {
+    return this.authService.register(
+      dto.email,
+      dto.password,
+      dto.passwordRepeat,
+    );
   }
 
   @UseGuards(LocalAuthGuard)
   @Post("login")
   login(@Req() req: Request) {
-    return this.authService.login(req.user);
+    return this.authService.login(req.user as any);
   }
 
   @UseGuards(RefreshTokenGuard)
-  @Get("refresh")
+  @Post("refresh")
   refreshTokens(@Req() req: Request) {
-    const userId = req.user["sub"];
-    const refreshToken = req.user["refreshToken"];
-    return this.authService.refreshTokens(userId, refreshToken);
+    const user = req.user as JwtPayload;
+
+    return this.authService.refreshTokens(user.sub, user.refreshToken!);
   }
 
   @UseGuards(AccessTokenGuard)
-  @Get("logout")
+  @Post("logout")
   logout(@Req() req: Request) {
-    this.authService.logout(req.user["sub"]);
+    const user = req.user as JwtPayload;
+
+    return this.authService.logout(user.sub);
   }
 }
