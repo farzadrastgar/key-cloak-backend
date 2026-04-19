@@ -8,6 +8,7 @@ import { UsersService } from "../users/users.service";
 import { JwtService } from "@nestjs/jwt";
 import * as bcrypt from "bcrypt";
 import { ConfigService } from "@nestjs/config";
+import { User } from "@prisma/client";
 
 @Injectable()
 export class AuthService {
@@ -17,13 +18,20 @@ export class AuthService {
     private configService: ConfigService,
   ) { }
 
-  async validateUser(email: string, password: string): Promise<any> {
+  async validateUser(email: string, password: string): Promise<User | null> {
     const user = await this.usersService.findOne(email);
-    if (user && bcrypt.compare(password, user.password)) {
-      const { password, ...result } = user;
-      return result;
+
+    if (!user) {
+      return null;
     }
-    return null;
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordValid) {
+      return null;
+    }
+
+    return user;
   }
 
   async register(
@@ -44,7 +52,7 @@ export class AuthService {
     const tokens = await this.getTokens(
       newUser.id,
       newUser.email,
-      newUser.roles
+      newUser.roles,
     );
 
     await this.updateRefreshToken(newUser.id, tokens.refreshToken);
@@ -53,8 +61,10 @@ export class AuthService {
 
   async login(email: string, password: string): Promise<any> {
     const user = await this.usersService.findOne(email);
-    if (!bcrypt.compare(password, user.password)) {
-      throw new UnauthorizedException();
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordValid) {
+      throw new UnauthorizedException("Invalid email or password");
     }
     const tokens = await this.getTokens(user.id, user.email, user.roles);
     await this.updateRefreshToken(user.id, tokens.refreshToken);
@@ -98,7 +108,7 @@ export class AuthService {
         {
           secret: this.configService.get<string>("JWT_ACCESS_SECRET"),
           expiresIn: "15m",
-        }
+        },
       ),
       this.jwtService.signAsync(
         {
@@ -109,7 +119,7 @@ export class AuthService {
         {
           secret: this.configService.get<string>("JWT_REFRESH_SECRET"),
           expiresIn: "7d",
-        }
+        },
       ),
     ]);
 

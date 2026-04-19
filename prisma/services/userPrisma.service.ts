@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
-import { UpdateUserDto } from 'src/users/dto/update-user-dto';
+import { Injectable } from "@nestjs/common";
+import { PrismaClient } from "@prisma/client";
+import { UpdateUserDto } from "src/users/dto/update-user-dto";
 
 @Injectable()
 export class UserPrismaService {
@@ -9,9 +9,6 @@ export class UserPrismaService {
   constructor() {
     this.prisma = new PrismaClient();
   }
-
-  // Optionally, add additional methods here to interact with Prisma
-  // For example, methods to perform CRUD operations on your data models
 
   async userCreate(params: { data: { email: string; password: string } }) {
     return this.prisma.user.create(params);

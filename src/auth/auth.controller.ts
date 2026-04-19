@@ -9,7 +9,7 @@ import { LocalAuthGuard } from "./guards/local.auth.guard";
 
 @Controller("auth")
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService) { }
 
   @Post("register")
   register(@Body() { email, password, passwordRepeat }: RegisterDto) {
@@ -18,8 +18,8 @@ export class AuthController {
 
   @UseGuards(LocalAuthGuard)
   @Post("login")
-  login(@Body() { email, password }: LoginDto) {
-    return this.authService.login(email, password);
+  login(@Req() req: Request) {
+    return this.authService.login(req.user);
   }
 
   @UseGuards(RefreshTokenGuard)
