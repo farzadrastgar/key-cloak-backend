@@ -6,9 +6,9 @@ import {
 import { UsersService } from "../users/users.service";
 import { TokenService } from "./services/token.service";
 import { PasswordService } from "./services/password.service";
-import { User } from "@prisma/client";
 import { AuthTokens } from "./dto/auth-tokens.dto";
 import { JwtPayload } from "./interfaces/jwt-payload.interface";
+import { User } from "@prisma/client";
 
 @Injectable()
 export class AuthService {
@@ -41,7 +41,7 @@ export class AuthService {
     userId: string,
     refreshToken: string,
   ): Promise<AuthTokens> {
-    const user = await this.usersService.findOneById(userId);
+    const user: User = await this.usersService.findOneById(userId);
 
     if (!user || !user.refreshToken) {
       throw new ForbiddenException("Access Denied");

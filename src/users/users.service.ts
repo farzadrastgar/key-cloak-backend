@@ -1,26 +1,32 @@
 import {
+  BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
   // NotFoundException,
   // BadRequestException,
 } from "@nestjs/common";
-// import { CreateUserDto } from "./dto/create-user.dto";
+import { CreateUserDto } from "./dto/create-user.dto";
 import { UpdateUserDto } from "./dto/update-user-dto";
-// import * as bcrypt from "bcrypt";
-// import { UserPrismaService } from "prisma/services/userPrisma.service";
 import { PrismaService } from "../../prisma/prisma.service";
+import { User } from "@prisma/client";
+import { PasswordService } from "src/auth/services/password.service";
+import { SafeUser } from "./types/safeUser.type";
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private readonly passwordService: PasswordService,
+  ) {}
 
-  async findOneByEmail(email: string) {
+  async findOneByEmail(email: string): Promise<User> {
     return this.prisma.user.findUnique({
       where: { email },
     });
   }
 
-  async findOneById(id: string) {
+  async findOneById(id: string): Promise<User> {
     const user = await this.prisma.user.findUnique({
       where: { id },
     });
@@ -30,37 +36,33 @@ export class UsersService {
   }
 
   // ✅ Create user with optional organization assignment
-  // async create(data: CreateUserDto & { organizationIds?: string[] }) {
-  //   const hashedPassword = await bcrypt.hash(data.password, 10);
+  async create(data: CreateUserDto & { organizationIds?: string[] }) {
+    const user = await this.prisma.user.findFirst({
+      where: {
+        OR: [{ email: data.email }, { username: data.username }],
+      },
+    });
 
-  //   return this.prisma.user.create({
-  //     data: {
-  //       email: data.email,
-  //       username: data.username,
-  //       password: hashedPassword,
-  //       firstName: data.firstName,
-  //       lastName: data.lastName,
+    if (user) {
+      throw new ConflictException("Username or email already taken");
+    }
 
-  //       organizations: data.organizationIds
-  //         ? {
-  //             create: data.organizationIds.map((orgId) => ({
-  //               organization: {
-  //                 connect: { id: orgId },
-  //               },
-  //             })),
-  //           }
-  //         : undefined,
-  //     },
-  //     include: {
-  //       organizations: {
-  //         include: { organization: true },
-  //       },
-  //     },
-  //   });
-  // }
+    const hashedPassword = data.password
+      ? await this.passwordService.hash(data.password)
+      : null;
+    return this.prisma.user.create({
+      data: {
+        email: data.email,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        username: data.username,
+        password: hashedPassword,
+      },
+    });
+  }
 
   // ✅ List + search + include organizations
-  async findAll(search?: string) {
+  async findAll(search?: string): Promise<SafeUser[]> {
     return this.prisma.user.findMany({
       where: search
         ? {
@@ -72,7 +74,15 @@ export class UsersService {
             ],
           }
         : {},
-
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        roles: true,
+        active: true,
+      },
       orderBy: { createdAt: "desc" },
     });
   }
@@ -97,34 +107,36 @@ export class UsersService {
     });
   }
 
-  // // ✅ Delete user
-  // async remove(id: string) {
-  //   await this.findOne(id);
+  // ✅ Delete user
+  async remove(id: string) {
+    await this.findOneById(id);
 
-  //   return this.prisma.user.delete({
-  //     where: { id },
-  //   });
-  // }
+    return this.prisma.user.delete({
+      where: { id },
+    });
+  }
 
-  // // ✅ Activate / deactivate
-  // async toggleActive(id: string, isActive: boolean) {
-  //   return this.prisma.user.update({
-  //     where: { id },
-  //     data: { isActive },
-  //   });
-  // }
+  // ✅ Activate / deactivate
+  async toggleActive(id: string) {
+    const user = await this.findOneById(id);
+    return this.prisma.user.update({
+      where: { id },
+      data: { active: !user.active },
+    });
+  }
 
-  // // ✅ Reset password (realistic)
-  // async resetPassword(id: string, newPassword: string) {
-  //   if (!newPassword || newPassword.length < 6) {
-  //     throw new BadRequestException("Password too short");
-  //   }
+  // ✅ Reset password (realistic)
+  async resetPassword(id: string, newPassword: string) {
+    await this.findOneById(id);
 
-  //   const hashedPassword = await bcrypt.hash(newPassword, 10);
+    if (!newPassword || newPassword.length < 6) {
+      throw new BadRequestException("Password too short");
+    }
+    const hashedPassword = await this.passwordService.hash(newPassword);
 
-  //   return this.prisma.user.update({
-  //     where: { id },
-  //     data: { password: hashedPassword },
-  //   });
-  // }
+    return this.prisma.user.update({
+      where: { id },
+      data: { password: hashedPassword },
+    });
+  }
 }

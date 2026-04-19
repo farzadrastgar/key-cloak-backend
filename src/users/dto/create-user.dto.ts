@@ -13,21 +13,21 @@ export class CreateUserDto {
 
   @IsOptional()
   @IsString()
-  username?: string;
+  username: string;
 
   @IsString()
   @MinLength(6)
+  @IsOptional()
   password: string;
 
   @IsOptional()
   @IsString()
-  firstName?: string;
+  firstName: string;
 
   @IsOptional()
   @IsString()
-  lastName?: string;
+  lastName: string;
 
-  // ✅ Assign organizations on create
   @IsOptional()
   @IsArray()
   @IsUUID("all", { each: true })
