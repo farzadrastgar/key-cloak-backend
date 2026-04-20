@@ -7,6 +7,7 @@ import { ServeStaticModule } from "@nestjs/serve-static";
 import { AuthModule } from "./auth/auth.module";
 import { UsersModule } from "./users/users.module";
 import { OrganizationsModule } from "./organizations/organizations.module";
+import { SettingsModule } from "./settings/settings.module";
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { OrganizationsModule } from "./organizations/organizations.module";
     AuthModule,
     UsersModule,
     OrganizationsModule,
+    SettingsModule,
   ],
   providers: [
     {

@@ -154,4 +154,52 @@ export class OrganizationsService {
       data: { parentId },
     });
   }
+
+  async assignUsers(orgId: string, userIds: string[]) {
+    if (!userIds || userIds.length === 0) {
+      throw new BadRequestException("userIds cannot be empty");
+    }
+
+    // check organization exists
+    const organization = await this.prisma.organization.findUnique({
+      where: { id: orgId },
+    });
+
+    if (!organization) {
+      throw new NotFoundException("Organization not found");
+    }
+
+    // check users exist
+    const users = await this.prisma.user.findMany({
+      where: {
+        id: { in: userIds },
+      },
+      select: { id: true },
+    });
+
+    if (users.length !== userIds.length) {
+      throw new NotFoundException("One or more users not found");
+    }
+
+    // ✅ connect users (many-to-many)
+    const updatedOrg = await this.prisma.organization.update({
+      where: { id: orgId },
+      data: {
+        users: {
+          connect: userIds.map((id) => ({ id })),
+        },
+      },
+      include: {
+        users: {
+          select: {
+            id: true,
+            email: true,
+            username: true,
+          },
+        },
+      },
+    });
+
+    return updatedOrg.users;
+  }
 }

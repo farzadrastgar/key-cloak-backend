@@ -81,6 +81,19 @@ export class OrganizationsController {
     };
   }
 
+  @Post(":id/users")
+  async assignUsers(
+    @Param("id") id: string,
+    @Body("userIds") userIds: string[],
+  ) {
+    const users = await this.organizationsService.assignUsers(id, userIds);
+
+    return {
+      message: "Users assigned to organization successfully",
+      data: users,
+    };
+  }
+
   // Delete organization
   @Delete(":id")
   async remove(@Param("id") id: string) {
