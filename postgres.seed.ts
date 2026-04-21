@@ -25,6 +25,39 @@ async function main() {
   });
 
   console.log("Admin created:", admin.email);
+
+  // -----------------------------
+  // AUTH SETTINGS (GLOBAL)
+  // -----------------------------
+  const authSettings = await prisma.authSettings.upsert({
+    where: { id: "global" },
+    update: {},
+    create: {
+      id: "global",
+      password: true,
+      passkeys: true,
+      emailPasscode: true,
+      mobile: true,
+    },
+  });
+
+  console.log("Auth settings initialized:", authSettings);
+
+  // -----------------------------
+  // MFA SETTINGS (GLOBAL)
+  // -----------------------------
+  const mfaSettings = await prisma.mfaSettings.upsert({
+    where: { id: "global" },
+    update: {},
+    create: {
+      id: "global",
+      totp: true,
+      email: true,
+      sms: true,
+    },
+  });
+
+  console.log("MFA settings initialized:", mfaSettings);
 }
 
 main()

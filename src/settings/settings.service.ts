@@ -5,20 +5,18 @@ import { UpdateMfaSettingsDto } from "./dto/update-mfa-settings.dto";
 
 @Injectable()
 export class SettingsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
-  // GET BOTH SETTINGS
-  async getSettings() {
-    const [auth, mfa] = await Promise.all([
-      this.prisma.authSettings.findUnique({
-        where: { id: "global" },
-      }),
-      this.prisma.mfaSettings.findUnique({
-        where: { id: "global" },
-      }),
-    ]);
+  async getAuthSettings() {
+    return this.prisma.authSettings.findUnique({
+      where: { id: "global" },
+    });
+  }
 
-    return { auth, mfa };
+  async getMFASettings() {
+    return this.prisma.mfaSettings.findUnique({
+      where: { id: "global" },
+    });
   }
 
   // UPDATE AUTH SETTINGS
