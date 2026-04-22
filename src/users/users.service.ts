@@ -18,7 +18,7 @@ export class UsersService {
   constructor(
     private prisma: PrismaService,
     private readonly passwordService: PasswordService,
-  ) {}
+  ) { }
 
   async findOneByEmail(email: string): Promise<User> {
     return this.prisma.user.findUnique({
@@ -57,6 +57,18 @@ export class UsersService {
         lastName: data.lastName,
         username: data.username,
         password: hashedPassword,
+
+        // 👇 connect organizations if provided
+        organizations: data.organizationIds
+          ? {
+            connect: data.organizationIds.map((id) => ({
+              id,
+            })),
+          }
+          : undefined,
+      },
+      include: {
+        organizations: true, // optional: return them in response
       },
     });
   }
@@ -66,13 +78,13 @@ export class UsersService {
     return this.prisma.user.findMany({
       where: search
         ? {
-            OR: [
-              { email: { contains: search, mode: "insensitive" } },
-              { username: { contains: search, mode: "insensitive" } },
-              { firstName: { contains: search, mode: "insensitive" } },
-              { lastName: { contains: search, mode: "insensitive" } },
-            ],
-          }
+          OR: [
+            { email: { contains: search, mode: "insensitive" } },
+            { username: { contains: search, mode: "insensitive" } },
+            { firstName: { contains: search, mode: "insensitive" } },
+            { lastName: { contains: search, mode: "insensitive" } },
+          ],
+        }
         : {},
       select: {
         id: true,
@@ -82,6 +94,12 @@ export class UsersService {
         lastName: true,
         roles: true,
         active: true,
+        organizations: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
     });
