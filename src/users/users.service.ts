@@ -58,6 +58,8 @@ export class UsersService {
         firstName: data.firstName,
         lastName: data.lastName,
         username: data.username,
+        phoneNumber: data.phoneNumber,
+
         password: hashedPassword,
       },
     });
@@ -156,6 +158,10 @@ export class UsersService {
   // ✅ Delete user
   async remove(id: string) {
     await this.findOneById(id);
+
+    await this.prisma.membership.deleteMany({
+      where: { userId: id },
+    });
 
     return this.prisma.user.delete({
       where: { id },

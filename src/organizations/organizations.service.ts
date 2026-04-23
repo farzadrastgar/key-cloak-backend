@@ -76,6 +76,11 @@ export class OrganizationsService {
       include: {
         parent: true,
         children: true,
+        memberships: {
+          include: {
+            user: true,
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -113,22 +118,29 @@ export class OrganizationsService {
 
   // ✅ Delete organization
   async remove(id: string) {
-    const org = await this.findOne(id);
+    await this.findOne(id);
 
-    // prevent deleting if it has children
-    const children = await this.prisma.organization.findMany({
+    const hasChildren = await this.prisma.organization.count({
       where: { parentId: id },
     });
 
-    if (children.length > 0) {
+    if (hasChildren > 0) {
       throw new BadRequestException(
         "Cannot delete organization with child organizations",
       );
     }
 
-    return this.prisma.organization.delete({
-      where: { id: org.id },
-    });
+    return this.prisma.$transaction([
+      this.prisma.membership.deleteMany({
+        where: { organizationId: id },
+      }),
+      this.prisma.invitation.deleteMany({
+        where: { organizationId: id },
+      }),
+      this.prisma.organization.delete({
+        where: { id },
+      }),
+    ]);
   }
 
   // ✅ Set parent organization (hierarchy update)

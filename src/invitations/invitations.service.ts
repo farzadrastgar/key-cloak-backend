@@ -54,16 +54,6 @@ export class InvitationsService {
                     continue;
                 }
 
-                // assign directly
-                await this.prisma.membership.create({
-                    data: {
-                        userId: existingUser.id,
-                        organizationId,
-                    },
-                });
-
-                assigned.push(email);
-                continue;
             }
 
             // ✅ CASE 2: new user → create invitation
@@ -79,16 +69,10 @@ export class InvitationsService {
             });
 
             invited.push(email);
-
-            // 👉 simulate email (log link)
-            console.log(
-                `Invite link: http://localhost:3000/accept-invite?token=${token}`,
-            );
         }
 
         return {
             invited,
-            assigned,
             skipped,
         };
     }

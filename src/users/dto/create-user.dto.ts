@@ -29,6 +29,10 @@ export class CreateUserDto {
   lastName: string;
 
   @IsOptional()
+  @IsString()
+  phoneNumber: string;
+
+  @IsOptional()
   @IsArray()
   @IsUUID("all", { each: true })
   organizationIds?: string[];
