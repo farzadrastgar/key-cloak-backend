@@ -26,9 +26,35 @@ export class UsersService {
     });
   }
 
-  async findOneById(id: string): Promise<User> {
+  async findAuthUserById(email: string): Promise<User> {
+    return this.prisma.user.findUnique({
+      where: { email },
+    });
+  }
+
+  async findOneById(id: string): Promise<SafeUser> {
     const user = await this.prisma.user.findUnique({
       where: { id },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        roles: true,
+        active: true,
+        phoneNumber: true,
+        memberships: {
+          select: {
+            organization: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!user) throw new NotFoundException("User not found");

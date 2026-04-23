@@ -17,7 +17,7 @@ import { UpdateOrganizationDto } from "./dto/update-organization.dto";
 @UseGuards(AccessTokenGuard)
 @Controller("organizations")
 export class OrganizationsController {
-  constructor(private readonly organizationsService: OrganizationsService) {}
+  constructor(private readonly organizationsService: OrganizationsService) { }
 
   // Create organization
   @Post()
@@ -81,18 +81,35 @@ export class OrganizationsController {
     };
   }
 
-  @Post(":id/users")
-  async assignUsers(
-    @Param("id") id: string,
-    @Body("userIds") userIds: string[],
+  @Post(":id/users/:userId")
+  async assignUser(
+    @Param("id") orgId: string,
+    @Param("userId") userId: string,
   ) {
-    const users = await this.organizationsService.assignUsers(id, userIds);
+    const membership = await this.organizationsService.assignUser(orgId, userId);
 
     return {
-      message: "Users assigned to organization successfully",
-      data: users,
+      message: "User assigned to organization successfully",
+      data: membership,
     };
   }
+
+  @Delete(":id/users/:userId")
+  async unassignUser(
+    @Param("id") orgId: string,
+    @Param("userId") userId: string,
+  ) {
+    const result = await this.organizationsService.unassignUserFromOrg(
+      orgId,
+      userId,
+    );
+
+    return {
+      message: result.message,
+      data: {},
+    };
+  }
+
 
   // Delete organization
   @Delete(":id")

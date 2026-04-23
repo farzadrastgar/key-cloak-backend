@@ -16,7 +16,7 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly tokenService: TokenService,
     private readonly passwordService: PasswordService,
-  ) {}
+  ) { }
 
   async validateUser(email: string, password: string): Promise<User | null> {
     const user = await this.usersService.findOneByEmail(email);
@@ -41,7 +41,7 @@ export class AuthService {
     userId: string,
     refreshToken: string,
   ): Promise<AuthTokens> {
-    const user: User = await this.usersService.findOneById(userId);
+    const user: User = await this.usersService.findAuthUserById(userId);
 
     if (!user || !user.refreshToken) {
       throw new ForbiddenException("Access Denied");

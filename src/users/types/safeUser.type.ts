@@ -6,4 +6,5 @@ export type SafeUser = {
   lastName: string;
   roles: string[];
   active: boolean;
+
 };

@@ -167,50 +167,51 @@ export class OrganizationsService {
     });
   }
 
-  async assignUsers(orgId: string, userIds: string[]) {
-    if (!userIds || userIds.length === 0) {
-      throw new BadRequestException("userIds cannot be empty");
+  async assignUser(orgId: string, userId: string) {
+    if (!userId) {
+      throw new BadRequestException("userId is required");
     }
 
-    const organization = await this.prisma.organization.findUnique({
-      where: { id: orgId },
-    });
+    const [organization, user] = await Promise.all([
+      this.prisma.organization.findUnique({
+        where: { id: orgId },
+      }),
+      this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true },
+      }),
+    ]);
 
     if (!organization) {
       throw new NotFoundException("Organization not found");
     }
 
-    const users = await this.prisma.user.findMany({
-      where: {
-        id: { in: userIds },
-      },
-      select: { id: true },
-    });
-
-    if (users.length !== userIds.length) {
-      throw new NotFoundException("One or more users not found");
+    if (!user) {
+      throw new NotFoundException("User not found");
     }
 
-    // ✅ create memberships instead of connect
-    for (const userId of userIds) {
-      await this.prisma.membership.upsert({
-        where: {
-          userId_organizationId: {
-            userId,
-            organizationId: orgId,
-          },
-        },
-        update: {},
-        create: {
+    await this.prisma.membership.upsert({
+      where: {
+        userId_organizationId: {
           userId,
           organizationId: orgId,
         },
-      });
-    }
+      },
+      update: {},
+      create: {
+        userId,
+        organizationId: orgId,
+      },
+    });
 
-    // ✅ fetch users via memberships
-    const memberships = await this.prisma.membership.findMany({
-      where: { organizationId: orgId },
+    // return updated user (or membership if you prefer)
+    return this.prisma.membership.findUnique({
+      where: {
+        userId_organizationId: {
+          userId,
+          organizationId: orgId,
+        },
+      },
       include: {
         user: {
           select: {
@@ -219,9 +220,36 @@ export class OrganizationsService {
             username: true,
           },
         },
+        organization: true,
+      },
+    });
+  }
+
+  async unassignUserFromOrg(orgId: string, userId: string) {
+    const organization = await this.prisma.organization.findUnique({
+      where: { id: orgId },
+    });
+
+    if (!organization) {
+      throw new NotFoundException("Organization not found");
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException("User not found");
+    }
+
+    await this.prisma.membership.deleteMany({
+      where: {
+        organizationId: orgId,
+        userId: userId,
       },
     });
 
-    return memberships.map((m) => m.user);
+    return { message: "User unassigned from organization" };
   }
 }
