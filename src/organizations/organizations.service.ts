@@ -11,7 +11,7 @@ import { Organization } from "@prisma/client";
 
 @Injectable()
 export class OrganizationsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   // ✅ Get one organization by ID
   async findOne(id: string): Promise<Organization> {
@@ -67,11 +67,11 @@ export class OrganizationsService {
     return this.prisma.organization.findMany({
       where: search
         ? {
-            OR: [
-              { name: { contains: search, mode: "insensitive" } },
-              { description: { contains: search, mode: "insensitive" } },
-            ],
-          }
+          OR: [
+            { name: { contains: search, mode: "insensitive" } },
+            { description: { contains: search, mode: "insensitive" } },
+          ],
+        }
         : {},
       include: {
         parent: true,
@@ -160,7 +160,6 @@ export class OrganizationsService {
       throw new BadRequestException("userIds cannot be empty");
     }
 
-    // check organization exists
     const organization = await this.prisma.organization.findUnique({
       where: { id: orgId },
     });
@@ -169,7 +168,6 @@ export class OrganizationsService {
       throw new NotFoundException("Organization not found");
     }
 
-    // check users exist
     const users = await this.prisma.user.findMany({
       where: {
         id: { in: userIds },
@@ -181,16 +179,28 @@ export class OrganizationsService {
       throw new NotFoundException("One or more users not found");
     }
 
-    // ✅ connect users (many-to-many)
-    const updatedOrg = await this.prisma.organization.update({
-      where: { id: orgId },
-      data: {
-        users: {
-          connect: userIds.map((id) => ({ id })),
+    // ✅ create memberships instead of connect
+    for (const userId of userIds) {
+      await this.prisma.membership.upsert({
+        where: {
+          userId_organizationId: {
+            userId,
+            organizationId: orgId,
+          },
         },
-      },
+        update: {},
+        create: {
+          userId,
+          organizationId: orgId,
+        },
+      });
+    }
+
+    // ✅ fetch users via memberships
+    const memberships = await this.prisma.membership.findMany({
+      where: { organizationId: orgId },
       include: {
-        users: {
+        user: {
           select: {
             id: true,
             email: true,
@@ -200,6 +210,6 @@ export class OrganizationsService {
       },
     });
 
-    return updatedOrg.users;
+    return memberships.map((m) => m.user);
   }
 }

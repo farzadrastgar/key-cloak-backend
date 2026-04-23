@@ -37,45 +37,62 @@ export class UsersService {
 
   // ✅ Create user with optional organization assignment
   async create(data: CreateUserDto & { organizationIds?: string[] }) {
-    const user = await this.prisma.user.findFirst({
+    const existingUser = await this.prisma.user.findFirst({
       where: {
         OR: [{ email: data.email }, { username: data.username }],
       },
     });
 
-    if (user) {
+    if (existingUser) {
       throw new ConflictException("Username or email already taken");
     }
 
     const hashedPassword = data.password
       ? await this.passwordService.hash(data.password)
       : null;
-    return this.prisma.user.create({
+
+    // ✅ Step 1: create user
+    const user = await this.prisma.user.create({
       data: {
         email: data.email,
         firstName: data.firstName,
         lastName: data.lastName,
         username: data.username,
         password: hashedPassword,
-
-        // 👇 connect organizations if provided
-        organizations: data.organizationIds
-          ? {
-            connect: data.organizationIds.map((id) => ({
-              id,
-            })),
-          }
-          : undefined,
-      },
-      include: {
-        organizations: true, // optional: return them in response
       },
     });
+
+    // ✅ Step 2: create memberships (if provided)
+    if (data.organizationIds && data.organizationIds.length > 0) {
+      const membershipsData = data.organizationIds.map((orgId) => ({
+        userId: user.id,
+        organizationId: orgId,
+      }));
+
+      await this.prisma.membership.createMany({
+        data: membershipsData,
+        skipDuplicates: true, // avoids duplicate errors
+      });
+    }
+
+    // ✅ Step 3: return user with organizations
+    const result = await this.prisma.user.findUnique({
+      where: { id: user.id },
+      include: {
+        memberships: {
+          include: {
+            organization: true,
+          },
+        },
+      },
+    });
+
+    return result;
   }
 
   // ✅ List + search + include organizations
   async findAll(search?: string): Promise<SafeUser[]> {
-    return this.prisma.user.findMany({
+    const users = await this.prisma.user.findMany({
       where: search
         ? {
           OR: [
@@ -94,15 +111,26 @@ export class UsersService {
         lastName: true,
         roles: true,
         active: true,
-        organizations: {
+        phoneNumber: true,
+        memberships: {
           select: {
-            id: true,
-            name: true,
+            organization: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
           },
         },
       },
       orderBy: { createdAt: "desc" },
     });
+
+    // ✅ flatten organizations
+    return users.map((user) => ({
+      ...user,
+      organizations: user.memberships.map((m) => m.organization),
+    }));
   }
 
   async update(

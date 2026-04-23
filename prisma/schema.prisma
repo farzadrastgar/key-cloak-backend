@@ -13,43 +13,70 @@ model User {
   email        String   @unique
   firstName    String?
   lastName     String?
-  phoneNumber  String?   
+  phoneNumber  String?
   password     String
   isVerified   Boolean  @default(false)
   refreshToken String?
-  roles        String[] @default(["user"])
+  roles        String[] @default(["user"]) // global roles (optional)
   active       Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   // Relations
-  organizations Organization[] @relation("UserOrganizations")
+  memberships  Membership[]
+  invitations  Invitation[] @relation("UserInvitations")
 }
 
 model Organization {
-  id        String   @id @default(uuid())
-  name      String
-  description String? 
-  createdAt DateTime @default(now())
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
 
   // hierarchy
   parentId  String?
-  parent    Organization? @relation("OrgHierarchy", fields: [parentId], references: [id])
+  parent    Organization?  @relation("OrgHierarchy", fields: [parentId], references: [id])
   children  Organization[] @relation("OrgHierarchy")
 
   // relations
-  users        User[] @relation("UserOrganizations")
-  invitations  Invitation[]
+  memberships Membership[]
+  invitations Invitation[]
+}
+
+model Membership {
+  id             String   @id @default(uuid())
+  userId         String
+  organizationId String
+  role           String   @default("member") // org-specific role
+  createdAt      DateTime @default(now())
+
+  user           User         @relation(fields: [userId], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([userId, organizationId]) // prevents duplicates
 }
 
 model Invitation {
   id              String   @id @default(uuid())
   email           String
   organizationId  String
+  token           String   @unique
+  status          InvitationStatus @default(PENDING)
+  expiresAt       DateTime
   createdAt       DateTime @default(now())
 
-  // relations
-  organization Organization @relation(fields: [organizationId], references: [id])
+  // optional: link if user already exists
+  userId          String?
+  user            User? @relation("UserInvitations", fields: [userId], references: [id])
+
+  organization    Organization @relation(fields: [organizationId], references: [id])
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  CANCELLED
 }
 
 model AuthSettings {

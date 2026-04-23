@@ -8,6 +8,7 @@ import { AuthModule } from "./auth/auth.module";
 import { UsersModule } from "./users/users.module";
 import { OrganizationsModule } from "./organizations/organizations.module";
 import { SettingsModule } from "./settings/settings.module";
+import { InvitationsModule } from "./invitations/invitations.module";
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { SettingsModule } from "./settings/settings.module";
     UsersModule,
     OrganizationsModule,
     SettingsModule,
+    InvitationsModule
   ],
   providers: [
     {
@@ -28,4 +30,4 @@ import { SettingsModule } from "./settings/settings.module";
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }
