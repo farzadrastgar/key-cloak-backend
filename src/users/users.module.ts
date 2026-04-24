@@ -10,4 +10,4 @@ import { PasswordService } from "src/auth/services/password.service";
   providers: [UsersService, PasswordService],
   exports: [UsersService],
 })
-export class UsersModule {}
+export class UsersModule { }

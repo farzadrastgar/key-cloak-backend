@@ -177,10 +177,25 @@ export class UsersService {
         ...(data.refreshToken !== undefined && {
           refreshToken: data.refreshToken,
         }),
+
+        ...(data.organizationIds && {
+          memberships: {
+            deleteMany: {
+              organizationId: {
+                notIn: data.organizationIds,
+              },
+            },
+            createMany: {
+              data: data.organizationIds.map((orgId) => ({
+                organizationId: orgId,
+              })),
+              skipDuplicates: true,
+            },
+          },
+        }),
       },
     });
   }
-
   // ✅ Delete user
   async remove(id: string) {
     await this.findOneById(id);
