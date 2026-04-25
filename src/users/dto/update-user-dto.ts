@@ -31,6 +31,10 @@ export class UpdateUserDto {
   @IsString()
   phoneNumber?: string;
 
+  @IsOptional()
+  @IsString()
+  email?: string;
+
   // ✅ Replace organizations
   @IsOptional()
   @IsArray()
