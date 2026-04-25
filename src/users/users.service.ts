@@ -174,6 +174,7 @@ export class UsersService {
         ...(data.firstName !== undefined && { firstName: data.firstName }),
         ...(data.lastName !== undefined && { lastName: data.lastName }),
         ...(data.active !== undefined && { active: data.active }),
+        ...(data.phoneNumber !== undefined && { phoneNumber: data.phoneNumber }),
         ...(data.refreshToken !== undefined && {
           refreshToken: data.refreshToken,
         }),

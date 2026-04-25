@@ -27,6 +27,10 @@ export class UpdateUserDto {
   @IsOptional()
   refreshToken: string;
 
+  @IsOptional()
+  @IsString()
+  phoneNumber?: string;
+
   // ✅ Replace organizations
   @IsOptional()
   @IsArray()

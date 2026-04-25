@@ -58,6 +58,70 @@ async function main() {
   });
 
   console.log("MFA settings initialized:", mfaSettings);
+
+
+  const usersData = [
+    {
+      email: "alice.johnson@example.com",
+      username: "alice",
+      password: "Password123!",
+      firstName: "Alice",
+      lastName: "Johnson",
+      roles: ["user"],
+    },
+    {
+      email: "bob.smith@example.com",
+      username: "bob",
+      password: "Password123!",
+      firstName: "Bob",
+      lastName: "Smith",
+      roles: ["user"],
+    },
+    {
+      email: "charlie.brown@example.com",
+      username: "charlie",
+      password: "Password123!",
+      firstName: "Charlie",
+      lastName: "Brown",
+      roles: ["user"],
+    },
+    {
+      email: "diana.miller@example.com",
+      username: "diana",
+      password: "Password123!",
+      firstName: "Diana",
+      lastName: "Miller",
+      roles: ["user"],
+    },
+    {
+      email: "ethan.wilson@example.com",
+      username: "ethan",
+      password: "Password123!",
+      firstName: "Ethan",
+      lastName: "Wilson",
+      roles: ["user"],
+    },
+  ];
+
+  for (const u of usersData) {
+    const hashed = await bcrypt.hash(u.password, 10);
+
+    await prisma.user.upsert({
+      where: { email: u.email },
+      update: {},
+      create: {
+        email: u.email,
+        username: u.username,
+        password: hashed,
+        firstName: u.firstName,
+        lastName: u.lastName,
+        isVerified: true,
+        roles: u.roles,
+      },
+    });
+
+
+  }
 }
 
 main()
